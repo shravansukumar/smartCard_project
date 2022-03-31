@@ -1,17 +1,21 @@
 import javacard.framework.*;
+import javacard.framework.Applet;
 
 public class CardApplet extends Applet {
 
     private static final byte DUMMY = (byte) 0x52;
 
     protected CardApplet() {
-        
         register();
+    }
+
+    public static void install(byte[] bArray, short bOffset, byte bLength) throws SystemException {
+        new CardApplet();
     }
 
     @Override
     public boolean select() {
-        // To choose this applet! This could change..
+        // To choose this applet!
         return true;
     }
 
