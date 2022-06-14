@@ -27,9 +27,6 @@ public class TerminalApp {
     static final byte[] APPLET_AID = { (byte) 0x3B, (byte) 0x29,
         (byte) 0x63, (byte) 0x61, (byte) 0x6C, (byte) 0x63, (byte) 0x01 };
 
-    //private Cipher sessionEncrypt;
-
-
     public static void main(String[] args) throws Exception {
         System.out.println("**************** Entering main **************");
         try {
@@ -56,11 +53,9 @@ public class TerminalApp {
 
     private void sendDummyMessage() {
         System.out.println("***************** Entering send block ****************"); 
-        //Cryptogram preparedCryptogram = Cryptogram 
-        //byte [] encryptedMessage = encrypty(sendHelloWorld());
         System.out.println("Terminal starting process");
         String dummyHelloWorld = "Hello";
-        CommandAPDU command = new CommandAPDU(0,DUMMY,0,0,(byte)'h');
+        CommandAPDU command = new CommandAPDU(0,DUMMY,0,0,dummyHelloWorld.getBytes());
         ResponseAPDU response =  transmit(command);
         //System.out.println(response);
     }

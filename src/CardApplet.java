@@ -31,6 +31,7 @@ public class CardApplet extends Applet {
         switch (apduBuffer[ISO7816.OFFSET_INS]) {
             case DUMMY:
              System.out.println("Dummy message received!!");
+             break;
              default:
              System.out.println("Something went wrong"); 
         }
