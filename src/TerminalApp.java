@@ -1,9 +1,10 @@
 import com.licel.jcardsim.smartcardio.CardSimulator;
 import com.licel.jcardsim.utils.AIDUtil;
 import javacard.framework.AID;
+import javacard.framework.JCSystem;
 //import src.main.java.applet.SecureChannelApplet;
 import javacard.framework.SystemException;
-
+import javacard.security.*;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.crypto.BadPaddingException;
@@ -13,29 +14,73 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import java.security.SecureRandom;
-
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.interfaces.*;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 
 public class TerminalApp {
 
     private CardSimulator simulator;
 
-    private static final byte CLA_SECURECHANNEL = (byte) 0xB0;
-    private static final byte INS_CRYPTOGRAM = (byte) 0x51;
+    private RSAPrivateKey masterPrivateKey;
+    private RSAPublicKey masterPublicKey;
+    private SignAndVerify s;
+    private String root_cert;
+
+    private static byte INIT_TERMINAL = (byte)0x01;
+    private static byte POS_TERMINAL = (byte)0x02;
+    private static byte RELOAD_TERMINAL = (byte)0x03;
+    private static byte CARD = (byte)0x00;
+    private State state = State.Init;
+
     private static final byte DUMMY = (byte) 0x52;
     //private static final String APPLET_AID = "12345678912345678900";
     final static byte[] pin = {'1', '2', '3', '4'}; 
     static final byte[] APPLET_AID = { (byte) 0x3B, (byte) 0x29,
         (byte) 0x63, (byte) 0x61, (byte) 0x6C, (byte) 0x63, (byte) 0x01 };
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("**************** Entering main **************");
+    public TerminalApp() {
+        KeyGenerator generator = new KeyGenerator();
         try {
-            TerminalApp terminalApp = new TerminalApp();  
-            terminalApp.run();
-            terminalApp.sendDummyMessage();
+            KeyPair keyPair = generator.getKeyPair();
+            masterPrivateKey = (RSAPrivateKey) keyPair.getPrivate();
+            masterPublicKey = (RSAPublicKey) keyPair.getPublic();
+            String message = INIT_TERMINAL +";"+ masterPublicKey+";0;None;"; 
+            // format of cerificate (type,publicKey, ID,expiry)
+            s= new SignAndVerify();
+            //byte [] cert_tag = s.sign(masterPrivateKey,message);
+            //root_cert=message+cert_tag;
+
         } catch (Exception e) {
-            e.getLocalizedMessage();
+            System.out.println(e.getMessage());
+            System.exit(-1);
+        }    
+    }
+
+    private void runApp() {
+        switch (state) {
+            case Init:
+                break;
+            case POS:
+                break;
+            case Reload:
+                break;
+            case Other:
+                break;
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("**************** Entering main **************");  
+        TerminalApp terminalApp = new TerminalApp();  
+        System.out.println(terminalApp.root_cert);
+        terminalApp.run();
+        terminalApp.runApp();
+        terminalApp.sendDummyMessage();
     }
 
     private void run() {
@@ -51,13 +96,28 @@ public class TerminalApp {
         }
     }
 
+    private void encryptWith(Key keyToBeUsed, int operation) {
+        try {
+            Cipher rsaCipher = Cipher.getInstance("RSA");
+            rsaCipher.init(operation, masterPublicKey);
+            byte [] encryptedMessage = JCSystem.makeTransientByteArray((short) 256, JCSystem.CLEAR_ON_DESELECT);
+            //rsaCipher.doFinal(input, inputOffset, inputLen, output, outputOffset);
+        } catch (NoSuchAlgorithmException |  NoSuchPaddingException | InvalidKeyException e) {
+            System.out.println(e.getMessage());
+            System.exit(-1);
+        }
+    }
+
     private void sendDummyMessage() {
         System.out.println("***************** Entering send block ****************"); 
         System.out.println("Terminal starting process");
         String dummyHelloWorld = "Hello";
-        CommandAPDU command = new CommandAPDU(0,DUMMY,0,0,dummyHelloWorld.getBytes());
+        short test = 99;
+        byte [] test1 = dummyHelloWorld.getBytes(); 
+        CommandAPDU command = new CommandAPDU(10,DUMMY,10,10,test1);
         ResponseAPDU response =  transmit(command);
-        //System.out.println(response);
+        byte [] datareceived = response.getData();
+        System.out.println(datareceived.length);
     }
 
     //private byte[] encrypty(byte[] data) 
