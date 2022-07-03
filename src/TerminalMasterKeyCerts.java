@@ -6,12 +6,14 @@ import java.security.*;
 public class TerminalMasterKeyCerts {
     public RSAPrivateKey masterPrivateKey;
     public RSAPublicKey masterPublicKey;
-    public byte [] masterTerminalCert = new byte [256];
+    //public byte [] masterTerminalCert = new byte [256];
     private KeyGenerator keyGenerator;
     private SignAndVerify signAndVerify;
     private static TerminalMasterKeyCerts instance = null;
     private static byte INIT_TERMINAL = (byte)0x01;
-    byte [] certificate = new byte[256];
+    byte [] certificate = new byte[1000];
+    byte [] masterTerminalTag = new byte[256];
+    byte [] otherDetails = new byte[2];
 
 
     private TerminalMasterKeyCerts() {
@@ -33,14 +35,16 @@ public class TerminalMasterKeyCerts {
     }
 
     private void generateMasterTerminalCerts() {
-        byte [] valuesToBeSigned = new byte[100];
+        byte [] valuesToBeSigned = new byte[256];
         valuesToBeSigned[0] = (short)1;
         valuesToBeSigned[1] = INIT_TERMINAL;
+        System.arraycopy(valuesToBeSigned, 0, otherDetails, 0, 2);
         System.arraycopy(masterPublicKey.getEncoded(), 0, valuesToBeSigned, 2, masterPublicKey.getEncoded().length);
         try {
-           byte [] tag = signAndVerify.sign(masterPrivateKey, valuesToBeSigned);
-           System.arraycopy(tag, 0, certificate, 0, tag.length);
-           System.arraycopy(valuesToBeSigned, 0,certificate, tag.length+1, tag.length);
+            masterTerminalTag = signAndVerify.sign(masterPrivateKey, valuesToBeSigned);
+          // byte [] tag = signAndVerify.sign(masterPrivateKey, valuesToBeSigned);
+           //System.arraycopy(tag, 0, certificate, 0, tag.length);
+           //System.arraycopy(valuesToBeSigned, 0,certificate, tag.length+1, tag.length);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             System.out.println(e.getMessage());
             System.exit(-1);
