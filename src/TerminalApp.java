@@ -24,6 +24,7 @@ public class TerminalApp {
     private static final byte INIT_CARD_EXPIRY = (byte) 0x15;
     private static final byte INIT_CARD_TAG = (byte) 0x16;
     private static final byte INIT_TERMINAL_TAG = (byte) 0x17;
+    private static final byte INIT_CARD_PIN = (byte) 0x18;
 
 
     final static byte[] pin = {'1', '2', '3', '4'}; 
@@ -65,6 +66,12 @@ public class TerminalApp {
                 // Card tag
                 prepareAndSendDataFromInitTerminal(initTerminal.cardTag, INIT_CARD_TAG);
 
+                // Card PIN, balance, brute_force_counter
+                prepareAndSendDataFromInitTerminal(initTerminal.getBytesForShort(initTerminal.cardPIN), INIT_CARD_PIN);
+
+
+
+
                 break;
             case POS:
                 break;
@@ -77,7 +84,6 @@ public class TerminalApp {
 
     public static void main(String[] args) throws Exception {
         // First point of entry
-        // TODO: refactor name and handling of class 
         TerminalApp terminalApp = new TerminalApp();  
         terminalApp.run();
         terminalApp.runApp();

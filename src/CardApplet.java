@@ -36,6 +36,7 @@ public class CardApplet extends Applet {
     private static final byte INIT_CARD_EXPIRY = (byte) 0x15;
     private static final byte INIT_CARD_TAG = (byte) 0x16;
     private static final byte INIT_TERMINAL_TAG = (byte) 0x17;
+    private static final byte INIT_CARD_PIN = (byte) 0x18;
 
     protected CardApplet() {
         register();
@@ -129,6 +130,10 @@ public class CardApplet extends Applet {
                 handleIncomingAPDU(apdu, temporaryBuffer, (short) 0, length);
                 Util.arrayCopy(temporaryBuffer, (short) 0, terminalMasterTag, (short) 0, length); 
 
+                case INIT_CARD_PIN:
+                setCardPIN(apdu);
+                break;
+                
                 default:
                     System.out.println(apduBuffer[ISO7816.OFFSET_INS]);
                     break;
@@ -157,6 +162,10 @@ public class CardApplet extends Applet {
         cardExpiry = Util.makeShort(buffer[ISO7816.OFFSET_CDATA+1], buffer[ISO7816.OFFSET_CDATA]);
         //cardExpiry = (short) buffer[ISO7816.OFFSET_CDATA+1]; 
         //Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, cardNumber, (short) 0, (short) 1);
+    }
+
+    private void setCardPIN(APDU apdu) {
+
     }
 
 

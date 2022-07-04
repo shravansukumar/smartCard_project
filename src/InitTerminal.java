@@ -8,8 +8,9 @@ public class InitTerminal {
     private KeyGenerator keyGenerator = new KeyGenerator();
     private SignAndVerify signAndVerify = new SignAndVerify();
     private KeyPair cardKeyPair;
-    public short cardNumber = (short)12345;
-    public short cardExpiry = (short)1030;
+    public short cardNumber = (short) 12345;
+    public short cardExpiry = (short) 1030;
+    public short cardPIN = (short) 5678;
     byte [] cardCertificate = new byte[292];
     byte [] cardTag = new byte[300];
     byte [] cardNumberBytes = new byte [2];
