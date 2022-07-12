@@ -51,12 +51,7 @@ public class InitTerminal {
             System.exit(-1);
         }
     }
-
-    // public void prepareCardKeys() {
-    //     System.arraycopy(cardKeyPair.getPublic().getEncoded(), 0, cardPublicKey, 0, cardKeyPair.getPublic().getEncoded().length);
-    //     System.arraycopy(cardKeyPair.getPrivate().getEncoded(), 0, cardPrivateKey, 0, cardKeyPair.getPrivate().getEncoded().length);
-    // }
-
+    
     public byte [] getCardPublicKeyExponent() { 
         byte [] exponent = publicKey.getPublicExponent().toByteArray();
         return exponent;

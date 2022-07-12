@@ -11,6 +11,7 @@ public class TerminalApp {
 
     private CardSimulator simulator;
     public TerminalMasterKeyCerts terminalMasterKeyCerts;
+    private Utils utils;
 
     private State state = State.Init;
 
@@ -23,8 +24,15 @@ public class TerminalApp {
     private static final byte INIT_CARD_NUMBER = (byte) 0x14;
     private static final byte INIT_CARD_EXPIRY = (byte) 0x15;
     private static final byte INIT_CARD_TAG = (byte) 0x16;
-    private static final byte INIT_TERMINAL_TAG = (byte) 0x17;
+    private static final byte INIT_MASTER_TERMINAL_TAG = (byte) 0x17;
     private static final byte INIT_CARD_PIN = (byte) 0x18;
+
+    // Mutual auth stuff
+    private static final byte MUTUAL_AUTH_RN = (byte) 0x19;
+    private static final byte MUTUAL_AUTH_TERMINAL_TAG = (byte) 0x20;
+    private static final byte MUTUAL_AUTH_TERMINAL_PUBLIC_KEY_EXPONENT = (byte) 0x21; 
+    private static final byte MUTUAL_AUTH_TERMINAL_PUBLIC_KEY_MODULO = (byte) 0x22;  
+     
 
 
     final static byte[] pin = {'1', '2', '3', '4'}; 
@@ -33,6 +41,7 @@ public class TerminalApp {
 
     public TerminalApp() {
         terminalMasterKeyCerts = TerminalMasterKeyCerts.getInstance();
+        utils = new Utils();
     }
 
     private void runApp() {
@@ -43,38 +52,52 @@ public class TerminalApp {
                 initTerminal.generateCardCerts();
 
                 //Card public key exponent
-                prepareAndSendDataFromInitTerminal(initTerminal.getCardPublicKeyExponent(), INIT_PUB_EXP);
+                prepareAndSendData(initTerminal.getCardPublicKeyExponent(), INIT_PUB_EXP);
 
                 //Card Public key modulo
-                prepareAndSendDataFromInitTerminal(initTerminal.getCardPublicKeyModulo(), INIT_PUB_MOD); 
+                prepareAndSendData(initTerminal.getCardPublicKeyModulo(), INIT_PUB_MOD); 
 
                 //Card Private key exponent
-                prepareAndSendDataFromInitTerminal(initTerminal.getCardPrivateKeyExponent(), INIT_PRV_EXP);
+                prepareAndSendData(initTerminal.getCardPrivateKeyExponent(), INIT_PRV_EXP);
 
                 //Card Private key modulo
-                prepareAndSendDataFromInitTerminal(initTerminal.getCardPrivateKeyModulo(), INIT_PRV_MOD);
+                prepareAndSendData(initTerminal.getCardPrivateKeyModulo(), INIT_PRV_MOD);
 
                 //Card Number
-                prepareAndSendDataFromInitTerminal(initTerminal.getBytesForShort(initTerminal.cardNumber), INIT_CARD_NUMBER);
+                prepareAndSendData(initTerminal.getBytesForShort(initTerminal.cardNumber), INIT_CARD_NUMBER);
 
                 // Card Expiry
-                prepareAndSendDataFromInitTerminal(initTerminal.getBytesForShort(initTerminal.cardExpiry), INIT_CARD_EXPIRY);
+                prepareAndSendData(initTerminal.getBytesForShort(initTerminal.cardExpiry), INIT_CARD_EXPIRY);
 
                 // Terminal master tag
-                prepareAndSendDataFromInitTerminal(terminalMasterKeyCerts.masterTerminalTag, INIT_TERMINAL_TAG);
+                prepareAndSendData(terminalMasterKeyCerts.masterTerminalTag, INIT_MASTER_TERMINAL_TAG);
 
                 // Card tag
-                prepareAndSendDataFromInitTerminal(initTerminal.cardTag, INIT_CARD_TAG);
+                prepareAndSendData(initTerminal.cardTag, INIT_CARD_TAG);
 
                 // Card PIN, balance, brute_force_counter
-                prepareAndSendDataFromInitTerminal(initTerminal.getBytesForShort(initTerminal.cardPIN), INIT_CARD_PIN);
-
-
-
-
+                prepareAndSendData(initTerminal.getBytesForShort(initTerminal.cardPIN), INIT_CARD_PIN);
+                // TODO: ANKIT stash in backend..
+                state = State.POS;
+                runApp();
                 break;
+
             case POS:
+                MutualAuthenticator mutualAuthenticator = new MutualAuthenticator();
+                // Random Number 1
+                short randomNumber = mutualAuthenticator.generateRandomNumber();
+                prepareAndSendData(utils.getBytesForShort(randomNumber), MUTUAL_AUTH_RN);
+
+                // Terminal Tag
+                prepareAndSendData(terminalMasterKeyCerts.terminalTag, MUTUAL_AUTH_TERMINAL_TAG);
+
+                // Terminal public key exponent
+                prepareAndSendData(terminalMasterKeyCerts.getTerminalPublicKeyExponent(), MUTUAL_AUTH_TERMINAL_PUBLIC_KEY_EXPONENT);
+
+                // Terminal public key modulo
+                prepareAndSendData(terminalMasterKeyCerts.getTerminalPublicModulo(), MUTUAL_AUTH_TERMINAL_PUBLIC_KEY_MODULO);
                 break;
+
             case Reload:
                 break;
             case Other:
@@ -94,7 +117,6 @@ public class TerminalApp {
         System.out.println("***************** Entering run ****************");
         simulator = new CardSimulator();
         AID appletAID = new AID(APPLET_AID, (byte)0, (byte)7); //AIDUtil.create(APPLET_AID);
-        System.out.println(appletAID);
         try {
             simulator.installApplet(appletAID, CardApplet.class, pin, (short)0, (byte)0);
             simulator.selectApplet(appletAID);
@@ -103,7 +125,7 @@ public class TerminalApp {
         }
     }
 
-    private void prepareAndSendDataFromInitTerminal(byte [] data, byte commandType) {
+    private void prepareAndSendData(byte [] data, byte commandType) {
         System.out.println("size of blocks: "+ data.length);
         CommandAPDU initCommand = new CommandAPDU(0, commandType, 0, 0, data);
         ResponseAPDU initResponse = transmit(initCommand);
